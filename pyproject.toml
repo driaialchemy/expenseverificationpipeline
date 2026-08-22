@@ -1,0 +1,42 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "expense-verification-pipeline"
+version = "0.1.0"
+description = "Gated multi-agent pipeline for expense verification against company spending policy"
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+    "openpyxl>=3.0",
+    "pandas>=2.0",
+    "python-docx>=0.8",
+    "pyyaml>=6.0",
+    "snowflake-connector-python>=3.0",
+    "snowflake-snowpark-python>=1.0",
+    "streamlit>=1.28",
+    "anthropic>=0.25",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.0",
+    "pytest-cov>=4.0",
+    "black>=23.0",
+    "ruff>=0.1",
+]
+
+[project.scripts]
+expense-verify = "expense_pipeline.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.black]
+line-length = 100
+target-version = ["py311"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"

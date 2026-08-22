@@ -1,0 +1,19 @@
+client entertainment:
+  daily_limit: 250.0
+  receipt_required_above: 187.5
+lodging:
+  daily_limit: 300.0
+  receipt_required_above: 225.0
+meals:
+  daily_limit: 75.0
+  receipt_required_above: 25.0
+office supplies:
+  daily_limit: 150.0
+  receipt_required_above: 25.0
+software:
+  daily_limit: 500.0
+  receipt_required_above: 50.0
+  requires_manager_approval_above: 200.0
+travel:
+  daily_limit: 400.0
+  receipt_required_above: 300.0
