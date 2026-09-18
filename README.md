@@ -379,6 +379,43 @@ The Anthropic API key is missing. Either:
 - Set `ANTHROPIC_API_KEY` environment variable (required for Stage 3)
 - Run without Stage 3 (pipeline stops after Stage 2 and writes local reports)
 
+<<<<<<< Updated upstream
+=======
+### Stage 3 "Illegal header value" / Connection error with API key in the message
+
+`ANTHROPIC_API_KEY` has a leading or trailing space (or quotes). HTTP headers cannot contain that whitespace. The checker now strips the key automatically. Rotate the key if it was printed in a terminal or log.
+
+### Stage 3 "Connection error."
+
+The Anthropic SDK hides the real TLS/network failure. The pipeline now retries over IPv4 and prints the underlying error. If `api.anthropic.com` is blocked (firewall, proxy, or SSL inspection), finish the run with the independent verifier:
+
+```bash
+expense-verify run sample_expenses.xlsx sample_policy_manual.docx --skip-checker
+```
+
+For a corporate proxy:
+
+```bash
+# PowerShell
+$env:HTTPS_PROXY="http://proxy.example.com:8080"
+```
+
+### Stage 3 404 / "model is not available"
+
+The API key is valid, but the model ID is retired or not enabled for that key. The checker defaults to `claude-sonnet-5` and will try another current model if the requested one 404s.
+
+```bash
+# PowerShell
+$env:ANTHROPIC_MODEL="claude-sonnet-5"
+expense-verify run sample_expenses.xlsx sample_policy_manual.docx
+
+# or pass it on the command line
+expense-verify run sample_expenses.xlsx sample_policy_manual.docx --model claude-haiku-4-5
+```
+
+Current IDs: `claude-sonnet-5`, `claude-haiku-4-5`, `claude-opus-5`. Do not use `claude-3-5-sonnet-20241022` or `claude-opus-4-1`.
+
+>>>>>>> Stashed changes
 ### "GateFailure: Row count mismatch in Snowflake"
 
 The database insert failed partially. Check:

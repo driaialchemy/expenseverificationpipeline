@@ -2,6 +2,7 @@
 
 from .schemas import Expense, PolicyRules, ExpenseVerdict, VerifierOutput
 from .gates import gate_verifier, GateFailure
+from .policy_parser import normalize_category
 
 
 def verify_compliance(
@@ -37,8 +38,16 @@ def _verify_single_expense(expense: Expense, policy_rules: PolicyRules) -> Expen
     reasons = []
     rule_citations = []
 
-    category_lower = expense.category.lower()
-    if category_lower not in policy_rules.rules:
+    category_lower = normalize_category(expense.category)
+    rule = next(
+        (
+            candidate
+            for name, candidate in policy_rules.rules.items()
+            if normalize_category(name) == category_lower
+        ),
+        None,
+    )
+    if rule is None:
         reasons.append(f"Unknown category: {expense.category}")
         return ExpenseVerdict(
             report_id=expense.report_id,
@@ -46,8 +55,6 @@ def _verify_single_expense(expense: Expense, policy_rules: PolicyRules) -> Expen
             reasons=reasons,
             rule_citations=rule_citations,
         )
-
-    rule = policy_rules.rules[category_lower]
 
     # Check daily limit
     if expense.amount > rule.daily_limit:

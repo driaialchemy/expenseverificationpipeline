@@ -167,3 +167,176 @@ def test_check_compliance_invalid_json(mock_anthropic_class):
         check_compliance(expenses, policy)
 
     assert "Failed to parse" in str(exc_info.value)
+<<<<<<< Updated upstream
+=======
+
+
+def test_resolve_model_default(monkeypatch):
+    from src.expense_pipeline.checker import DEFAULT_MODEL, resolve_model
+
+    monkeypatch.delenv("ANTHROPIC_MODEL", raising=False)
+    assert resolve_model() == DEFAULT_MODEL
+    assert resolve_model("claude-haiku-4-5") == "claude-haiku-4-5"
+
+
+def test_resolve_model_from_env(monkeypatch):
+    from src.expense_pipeline.checker import resolve_model
+
+    monkeypatch.setenv("ANTHROPIC_MODEL", "claude-opus-5")
+    assert resolve_model() == "claude-opus-5"
+    assert resolve_model("claude-sonnet-5") == "claude-sonnet-5"
+
+
+def test_build_client_strips_api_key_whitespace(monkeypatch):
+    from src.expense_pipeline.checker import _build_client
+
+    monkeypatch.setenv("ANTHROPIC_API_KEY", '  "sk-ant-testkey"  ')
+    with patch("src.expense_pipeline.checker.Anthropic") as mock_cls:
+        _build_client()
+        assert mock_cls.call_args.kwargs["api_key"] == "sk-ant-testkey"
+
+
+def test_exception_chain_redacts_api_key():
+    from src.expense_pipeline.checker import _exception_chain
+
+    exc = Exception("Illegal header value b' sk-ant-api03-SECRETVALUE '")
+    text = _exception_chain(exc)
+    assert "SECRETVALUE" not in text
+    assert "sk-ant-[REDACTED]" in text
+
+
+@patch("src.expense_pipeline.checker.Anthropic")
+def test_check_compliance_illegal_header_does_not_leak_key(mock_anthropic_class):
+    from src.expense_pipeline.checker import AnthropicConnectionError
+
+    expenses = create_test_expenses()
+    policy = create_test_policy()
+    secret = "sk-ant-api03-SECRETVALUE"
+    illegal = Exception(f"Illegal header value b' {secret} '")
+    mock_client = Mock()
+    mock_anthropic_class.return_value = mock_client
+    mock_client.messages.create.side_effect = illegal
+
+    with pytest.raises(AnthropicConnectionError) as exc_info:
+        check_compliance(expenses, policy)
+
+    message = str(exc_info.value)
+    assert secret not in message
+    assert "whitespace" in message.lower()
+
+
+@patch("src.expense_pipeline.checker.Anthropic")
+def test_check_compliance_uses_requested_model(mock_anthropic_class):
+    expenses = create_test_expenses()
+    policy = create_test_policy()
+
+    mock_response_data = [
+        {"report_id": "EXP-0001", "verdict": "approved", "reasons": [], "rule_citations": []},
+        {"report_id": "EXP-0002", "verdict": "approved", "reasons": [], "rule_citations": []},
+    ]
+    mock_client = Mock()
+    mock_anthropic_class.return_value = mock_client
+    mock_client.messages.create.return_value = Mock(
+        content=[Mock(text=json.dumps(mock_response_data))]
+    )
+
+    check_compliance(expenses, policy, model="claude-haiku-4-5")
+
+    assert mock_client.messages.create.call_args.kwargs["model"] == "claude-haiku-4-5"
+
+
+@patch("src.expense_pipeline.checker.Anthropic")
+def test_check_compliance_falls_back_when_model_missing(mock_anthropic_class):
+    expenses = create_test_expenses()
+    policy = create_test_policy()
+
+    mock_response_data = [
+        {"report_id": "EXP-0001", "verdict": "approved", "reasons": [], "rule_citations": []},
+        {"report_id": "EXP-0002", "verdict": "approved", "reasons": [], "rule_citations": []},
+    ]
+    not_found = Exception("404 {type: not_found_error} model: claude-3-5-sonnet-20241022")
+    not_found.status_code = 404
+
+    mock_client = Mock()
+    mock_anthropic_class.return_value = mock_client
+    mock_client.messages.create.side_effect = [
+        not_found,
+        Mock(content=[Mock(text=json.dumps(mock_response_data))]),
+    ]
+    mock_client.models.list.return_value = Mock(
+        data=[Mock(id="claude-sonnet-5"), Mock(id="claude-haiku-4-5")]
+    )
+
+    output = check_compliance(expenses, policy, model="claude-3-5-sonnet-20241022")
+
+    assert len(output.verdicts) == 2
+    assert mock_client.messages.create.call_args_list[1].kwargs["model"] == "claude-sonnet-5"
+
+
+@patch("src.expense_pipeline.checker.Anthropic")
+def test_check_compliance_model_not_found_message(mock_anthropic_class):
+    expenses = create_test_expenses()
+    policy = create_test_policy()
+
+    not_found = Exception("404 {type: not_found_error}")
+    not_found.status_code = 404
+
+    mock_client = Mock()
+    mock_anthropic_class.return_value = mock_client
+    mock_client.messages.create.side_effect = not_found
+    mock_client.models.list.return_value = Mock(data=[])
+
+    with pytest.raises(ValueError) as exc_info:
+        check_compliance(expenses, policy, model="claude-opus-4-1")
+
+    message = str(exc_info.value)
+    assert "claude-opus-4-1" in message
+    assert "ANTHROPIC_MODEL" in message
+
+
+def _connection_error(message="Connection error."):
+    exc = Exception(message)
+    exc.status_code = None
+    return exc
+
+
+@patch("src.expense_pipeline.checker.Anthropic")
+def test_check_compliance_retries_over_ipv4(mock_anthropic_class):
+    expenses = create_test_expenses()
+    policy = create_test_policy()
+    mock_response_data = [
+        {"report_id": "EXP-0001", "verdict": "approved", "reasons": [], "rule_citations": []},
+        {"report_id": "EXP-0002", "verdict": "approved", "reasons": [], "rule_citations": []},
+    ]
+
+    failing_client = Mock()
+    failing_client.messages.create.side_effect = _connection_error()
+    ok_client = Mock()
+    ok_client.messages.create.return_value = Mock(
+        content=[Mock(text=json.dumps(mock_response_data))]
+    )
+    mock_anthropic_class.side_effect = [failing_client, ok_client]
+
+    output = check_compliance(expenses, policy)
+
+    assert len(output.verdicts) == 2
+    assert mock_anthropic_class.call_count == 2
+
+
+@patch("src.expense_pipeline.checker.Anthropic")
+def test_check_compliance_connection_error_includes_cause(mock_anthropic_class):
+    from src.expense_pipeline.checker import AnthropicConnectionError
+
+    expenses = create_test_expenses()
+    policy = create_test_policy()
+
+    failing_client = Mock()
+    failing_client.messages.create.side_effect = _connection_error()
+    mock_anthropic_class.return_value = failing_client
+
+    with pytest.raises(AnthropicConnectionError) as exc_info:
+        check_compliance(expenses, policy)
+
+    assert "Underlying error" in str(exc_info.value)
+    assert "--skip-checker" in str(exc_info.value)
+>>>>>>> Stashed changes

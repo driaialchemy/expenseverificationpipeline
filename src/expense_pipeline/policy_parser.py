@@ -1,5 +1,6 @@
 """Stage 2: Parsing of policy manual."""
 
+import re
 from pathlib import Path
 
 import yaml
@@ -7,6 +8,11 @@ from docx import Document
 
 from .schemas import PolicyRule, PolicyRules
 from .gates import gate_policy_parser, GateFailure
+
+
+def normalize_category(name: str) -> str:
+    """Normalize category labels so 'Office Supplies' and office_supplies match."""
+    return re.sub(r"[^a-z0-9]+", "_", (name or "").lower()).strip("_")
 
 
 def parse_policy_manual(docx_path: str, output_yaml: str = None) -> PolicyRules:
@@ -84,7 +90,7 @@ def _extract_rules_from_doc(doc: Document) -> dict:
         for row_idx, row in enumerate(table.rows):
             cells = row.cells
             if len(cells) >= 2:
-                category = cells[0].text.strip().lower()
+                category = normalize_category(cells[0].text.strip())
                 limit_text = cells[1].text.strip()
 
                 # Skip header row and empty rows
@@ -130,6 +136,7 @@ def load_policy_rules_yaml(yaml_path: str) -> PolicyRules:
 
     rules = {}
     for category, rule_data in yaml_data.items():
+        category = normalize_category(category)
         rules[category] = PolicyRule(
             category=category,
             daily_limit=float(rule_data.get("daily_limit", 0)),

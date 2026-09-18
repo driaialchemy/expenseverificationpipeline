@@ -17,11 +17,33 @@ from .audit import (
     create_audit_file,
     log_stage_completion,
     log_gate_check,
+    log_decision,
     log_disagreement,
     log_snowflake_load,
     log_run_summary,
 )
+<<<<<<< Updated upstream
 from .schemas import RunResult
+=======
+
+
+def _load_dotenv() -> None:
+    """Load .env into os.environ without overwriting existing variables."""
+    candidates = (Path.cwd() / ".env", Path(__file__).resolve().parents[2] / ".env")
+    env_path = next((path for path in candidates if path.is_file()), None)
+    if env_path is None:
+        return
+    for raw in env_path.read_text(encoding="utf-8").splitlines():
+        line = raw.strip()
+        if not line or line.startswith("#") or "=" not in line:
+            continue
+        key, _, value = line.partition("=")
+        key = key.strip()
+        value = value.strip()
+        if len(value) >= 2 and value[0] == value[-1] and value[0] in {"'", '"'}:
+            value = value[1:-1]
+        os.environ.setdefault(key, value.strip())
+>>>>>>> Stashed changes
 
 
 def main():
@@ -138,6 +160,27 @@ def run_pipeline(args):
             checker_output.verdicts,
             verifier_output.verdicts,
         )
+
+        for approved_exp in approved_expenses:
+            verifier = approved_exp.verifier_verdict
+            citations = list(verifier.rule_citations or [])
+            policy_matched = citations[0] if citations else None
+            log_decision(
+                audit_file,
+                approved_exp.expense.report_id,
+                approved_exp.final_status,
+                reasoning_path=[
+                    f"checker:{approved_exp.checker_verdict.verdict}",
+                    f"verifier:{verifier.verdict}",
+                    *(verifier.reasons or []),
+                ],
+                policy_matched=policy_matched,
+                confidence=(
+                    0.4
+                    if approved_exp.final_status == "needs_human_review"
+                    else 1.0
+                ),
+            )
 
         for disagreement in disagreements:
             log_disagreement(

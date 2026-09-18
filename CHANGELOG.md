@@ -1,0 +1,2 @@
+- P1: audit decisions now record reasoning_path, policy_matched, and confidence alongside approve/flag/escalate.
+- policy_matched writes now emit the policy id string per the canonical lineage schema.

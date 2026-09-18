@@ -3,7 +3,7 @@
 import json
 from datetime import datetime
 from pathlib import Path
-from typing import Any, Optional
+from typing import Optional
 
 from .schemas import RunResult
 
@@ -35,6 +35,27 @@ def log_gate_check(audit_file: Path, stage: str, passed: bool, detail: Optional[
         "stage": stage,
         "passed": passed,
         "detail": detail or {},
+    }
+    _append_to_audit(audit_file, entry)
+
+
+def log_decision(
+    audit_file: Path,
+    report_id: str,
+    outcome: str,
+    reasoning_path: Optional[list[str]] = None,
+    policy_matched: Optional[str] = None,
+    confidence: Optional[float] = None,
+) -> None:
+    """Log one approve/flag/escalate decision. Lineage shape: governance-logger/docs/decision-lineage-schema.md."""
+    entry = {
+        "timestamp": datetime.utcnow().isoformat(),
+        "event": "decision",
+        "report_id": report_id,
+        "outcome": outcome,
+        "reasoning_path": reasoning_path,
+        "policy_matched": policy_matched,
+        "confidence": confidence,
     }
     _append_to_audit(audit_file, entry)
 
