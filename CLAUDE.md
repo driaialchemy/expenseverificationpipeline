@@ -47,3 +47,25 @@ Before implementing a change, ask if:
 4. Is this in the build brief, or am I adding scope?
 
 If uncertain, ask the user before proceeding.
+
+## Audit Remediation Notes
+
+- Audit path: $AuditFile
+- Risk level from audit: $risk.
+- Addressed audit issues: Spreadsheet/data export files found: sample_expenses.xlsx; External AI API usage: anthropic — API key management required.; Credential pattern indicators in code: api_key; Risk level is HIGH, expected LOW.; Dependency manifests present: pyproject.toml; Test suite present — actively developed project.; Missing AGENTS.md — no machine-readable safety policy.
+
+
+## AI Provider Boundary
+
+AI providers detected by audit: anthropic. Use providers only for the repository's documented workflow. API keys must be supplied through environment variables or managed platform secrets, never committed or echoed. Do not add redundant providers without human approval.
+
+
+## Data Export Boundary
+
+Spreadsheet/data export files detected by audit: sample_expenses.xlsx. Keep generated exports gitignored unless they are documented fixtures. Do not replace synthetic/sample fixtures with real operational data.
+
+
+## Human Review Required
+
+This audit classified the repo as HIGH risk. Agents may draft governance/documentation updates, but credential, provider, database, deployment, and data-export remediation requires human review before code or data changes.
+

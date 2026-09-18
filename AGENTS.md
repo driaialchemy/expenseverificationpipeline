@@ -56,3 +56,17 @@ testing:
     - gate_pass_and_fail_tests
     - mocked_llm_and_snowflake_unit_tests
     - end_to_end_tests_with_temp_files_and_no_real_snowflake
+
+# Audit remediation metadata
+audit_path: audit/multi_repo/2026-09-18/repo_expenseverificationpipeline_20260918T004902Z.json
+risk_level: HIGH
+human_review_required: true
+audit_findings:
+  - "Spreadsheet/data export files found: sample_expenses.xlsx"
+  - "External AI API usage: anthropic — API key management required."
+  - "Credential pattern indicators in code: api_key"
+  - "Risk level is HIGH, expected LOW."
+  - "Dependency manifests present: pyproject.toml"
+  - "Test suite present — actively developed project."
+  - "Missing AGENTS.md — no machine-readable safety policy."
+

@@ -55,3 +55,7 @@ reports/
 
 # Streamlit
 .streamlit/
+.env.*
+*.xlsx
+*.xls
+*.csv
