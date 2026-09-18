@@ -1,6 +1,7 @@
 """Command-line interface for the expense verification pipeline."""
 
 import argparse
+import os
 import sys
 from datetime import datetime
 from pathlib import Path
@@ -22,9 +23,7 @@ from .audit import (
     log_snowflake_load,
     log_run_summary,
 )
-<<<<<<< Updated upstream
 from .schemas import RunResult
-=======
 
 
 def _load_dotenv() -> None:
@@ -43,11 +42,11 @@ def _load_dotenv() -> None:
         if len(value) >= 2 and value[0] == value[-1] and value[0] in {"'", '"'}:
             value = value[1:-1]
         os.environ.setdefault(key, value.strip())
->>>>>>> Stashed changes
 
 
 def main():
     """Main CLI entry point."""
+    _load_dotenv()
     parser = argparse.ArgumentParser(
         description="Expense verification pipeline against company spending policy"
     )

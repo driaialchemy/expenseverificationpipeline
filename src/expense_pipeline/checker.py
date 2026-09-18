@@ -1,22 +1,18 @@
 """Stage 3: LLM-assisted compliance checking."""
 
 import json
-<<<<<<< Updated upstream
-from datetime import datetime
-=======
 import os
 import re
+from datetime import datetime
 from typing import Optional
->>>>>>> Stashed changes
 
+import httpx
 from anthropic import Anthropic
 
 from .schemas import Expense, PolicyRules, ExpenseVerdict, CheckerOutput
 from .gates import gate_checker, GateFailure
 
 
-<<<<<<< Updated upstream
-=======
 class AnthropicConnectionError(ValueError):
     """Raised when the Anthropic API cannot be reached."""
 
@@ -66,9 +62,10 @@ def _redact_secrets(text: str) -> str:
     return _SECRET_RE.sub("sk-ant-[REDACTED]", text)
 
 
->>>>>>> Stashed changes
 def check_compliance(
-    expenses: list[Expense], policy_rules: PolicyRules
+    expenses: list[Expense],
+    policy_rules: PolicyRules,
+    model: Optional[str] = None,
 ) -> CheckerOutput:
     """
     Use LLM to perform compliance judgment on ambiguous expense rows.
@@ -76,12 +73,9 @@ def check_compliance(
     Returns verdict for each expense based on policy rules.
     Gate confirms row-count parity and every row has a verdict.
     """
-    client = Anthropic()
-
-<<<<<<< Updated upstream
-=======
+    resolved_model = resolve_model(model)
     try:
-        return _run_checker(_build_client(), expenses, policy_rules, model)
+        return _run_checker(_build_client(), expenses, policy_rules, resolved_model)
     except Exception as exc:
         if _is_illegal_api_key_header(exc):
             raise AnthropicConnectionError(_illegal_api_key_message()) from exc
@@ -95,7 +89,7 @@ def check_compliance(
             ),
         )
         try:
-            return _run_checker(ipv4_client, expenses, policy_rules, model)
+            return _run_checker(ipv4_client, expenses, policy_rules, resolved_model)
         except Exception as retry_exc:
             if _is_connection_error(retry_exc):
                 raise AnthropicConnectionError(_connection_error_message(retry_exc)) from retry_exc
@@ -108,7 +102,6 @@ def _run_checker(
     policy_rules: PolicyRules,
     model: str,
 ) -> CheckerOutput:
->>>>>>> Stashed changes
     policy_summary = _build_policy_summary(policy_rules)
     expenses_text = _build_expenses_text(expenses)
 
@@ -179,8 +172,6 @@ Return a JSON array with one verdict per expense, in the same order."""
     return output
 
 
-<<<<<<< Updated upstream
-=======
 def _create_message(client: Anthropic, model: str, **kwargs):
     """Call Messages API, falling back to a model this API key can access."""
     try:
@@ -284,7 +275,6 @@ def _model_not_found_message(model: str, available: list[str]) -> str:
     )
 
 
->>>>>>> Stashed changes
 def _build_policy_summary(policy_rules: PolicyRules) -> str:
     """Build a text summary of policy rules for the LLM."""
     lines = []

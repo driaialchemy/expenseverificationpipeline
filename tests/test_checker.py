@@ -167,8 +167,6 @@ def test_check_compliance_invalid_json(mock_anthropic_class):
         check_compliance(expenses, policy)
 
     assert "Failed to parse" in str(exc_info.value)
-<<<<<<< Updated upstream
-=======
 
 
 def test_resolve_model_default(monkeypatch):
@@ -339,4 +337,3 @@ def test_check_compliance_connection_error_includes_cause(mock_anthropic_class):
 
     assert "Underlying error" in str(exc_info.value)
     assert "--skip-checker" in str(exc_info.value)
->>>>>>> Stashed changes
